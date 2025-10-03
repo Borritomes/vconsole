@@ -1,0 +1,5 @@
+std = "roblox"
+
+[config]
+unused_variable = "allow"
+local_shadow = "allow"
