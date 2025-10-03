@@ -1,6 +1,7 @@
 # pre 1.0 software there will be breaking changes and stuff
 
 # Important
+- **I haven't tested very thoroughly so theres probably some bugs**
 - At the moment there is no interface and if there is one in the future it will be separate.
 - There is also no autocomplete I would like to add one in the future but it sounds complicated so I'm putting it off for now 😓.
 - there is no wally right now and there probably won't be a pesde package but, I plan to keep everything in one file so that hopefully shouldn't be too much of an issue.
