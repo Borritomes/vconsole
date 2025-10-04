@@ -1,7 +1,10 @@
 --!nolint LocalUnused
 --!nolint FunctionUnused
+
 export type command = {
 	callback: (any) -> boolean,
+	args: { (string) -> any }?,
+	protection: (() -> boolean)?,
 }
 
 local commandRegistry: { [string]: command? } = {}
@@ -11,7 +14,12 @@ local devconsole = {}
 
 devconsole._MAX_COMMAND_LENGTH = 1024
 
-local function parseCommand(commandString: string): { func: (any) -> boolean?, args: { string? } }?
+local function parseCommand(commandString: string): {
+	func: (any) -> boolean?,
+	protection: (() -> boolean)?,
+	args: { string? },
+	argConverter: { (string) -> any }?,
+}?
 	if commandString == "" then
 		return
 	end
@@ -53,7 +61,6 @@ local function parseCommand(commandString: string): { func: (any) -> boolean?, a
 		table.insert(words, currentWord)
 	end
 
-	print(words)
 	local commandName = words[1]
 
 	--if there is no command name
@@ -73,7 +80,9 @@ local function parseCommand(commandString: string): { func: (any) -> boolean?, a
 	if command ~= nil and command.callback ~= nil then
 		return {
 			func = command.callback,
+			protection = command.protection,
 			args = args,
+			argConverter = command.args,
 		}
 	elseif aliasRegistry[commandName] ~= nil then
 		return {
@@ -144,7 +153,27 @@ function devconsole.runCommand(commandString: string)
 		if result == nil then
 			return false
 		end
-		result.func(table.unpack(result.args))
+
+		local convertedArgs = {}
+
+		if result.argConverter ~= nil then
+			for i, arg in result.args do
+				if arg == nil then
+					continue
+				end
+				if result.argConverter[i] ~= nil then
+					table.insert(convertedArgs, result.argConverter[i](arg))
+				end
+			end
+		end
+
+		if result.protection == nil then
+			result.func(table.unpack(convertedArgs))
+		elseif result.protection() == true then
+			result.func(table.unpack(convertedArgs))
+		else
+			warn("command is protected")
+		end
 	end
 
 	return true
