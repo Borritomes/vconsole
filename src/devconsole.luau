@@ -10,9 +10,9 @@ export type command = {
 local commandRegistry: { [string]: command? } = {}
 local aliasRegistry: { [string]: string? } = {}
 
-local devconsole = {}
+local vconsole = {}
 
-devconsole._MAX_COMMAND_LENGTH = 1024
+vconsole._MAX_COMMAND_LENGTH = 1024
 
 local function parseCommand(commandString: string): {
 	func: (any) -> boolean?,
@@ -89,7 +89,7 @@ local function parseCommand(commandString: string): {
 			func = function()
 				local alias = aliasRegistry[commandName]
 				if alias ~= nil then
-					return devconsole.runCommand(alias)
+					return vconsole.runCommand(alias)
 				else
 					warn("no alias found with the name " .. commandName)
 					return false
@@ -132,17 +132,14 @@ end
 --[[
     Run a command from a string
     <p><strong>examples:</strong><br><code>
-    devconsole.runCommand("bind w +forward")<br>
-    devconsole.runCommand('alias jumpthrow "+jump; +attack"')</code>
+    vconsole.runCommand("bind w +forward")<br>
+    vconsole.runCommand('alias jumpthrow "+jump; +attack"')</code>
     <br><sup>bind and action commands not included</sup></p>
 ]]
-function devconsole.runCommand(commandString: string)
-	if commandString:len() > devconsole._MAX_COMMAND_LENGTH then
+function vconsole.runCommand(commandString: string)
+	if commandString:len() > vconsole._MAX_COMMAND_LENGTH then
 		warn(
-			"Command of length "
-				.. commandString:len()
-				.. " is to long. Max length is "
-				.. devconsole._MAX_COMMAND_LENGTH
+			"Command of length " .. commandString:len() .. " is to long. Max length is " .. vconsole._MAX_COMMAND_LENGTH
 		)
 		return false
 	end
@@ -181,9 +178,9 @@ end
 
 --[[
     The same as <code>runCommand</code> but without the character limit<br>
-    <sup>character limit can be changed with the <code>devconsole._MAX_COMMAND_LENGTH</code> variable</sup>
+    <sup>character limit can be changed with the <code>vconsole._MAX_COMMAND_LENGTH</code> variable</sup>
 ]]
-function devconsole.runCommandUnrestriced(commandString: string): boolean
+function vconsole.runCommandUnrestriced(commandString: string): boolean
 	local commands = splitCommand(commandString)
 
 	for _, command in commands do
@@ -200,9 +197,9 @@ end
 --[[
     Register a command to the command registry<br>
     The command registry is a table of commands that can be executed
-    <p>commands can are just dictionaries but can also be created with the <code>devconsole.createCommand</code> function</p>
+    <p>commands can are just dictionaries but can also be created with the <code>vconsole.createCommand</code> function</p>
 ]]
-function devconsole.registerCommand(name: string, command: command)
+function vconsole.registerCommand(name: string, command: command)
 	commandRegistry[name] = command
 end
 
@@ -211,14 +208,15 @@ end
     @param command name
     @return if the alias existed
 ]]
-function devconsole.removeCommand(name: string) end
+function vconsole.removeCommand(name: string) end
 
 --[[
     Function to create commands
 ]]
-function devconsole.createCommand(callback: (any) -> boolean): command
+function vconsole.createCommand(callback: (any) -> boolean, protection: (() -> boolean)?): command
 	return {
 		callback = callback,
+		protection = protection,
 	}
 end
 
@@ -226,7 +224,7 @@ end
     Get all currently registered commands<br>
     register commands with <code>registerCommand</code>
 ]]
-function devconsole.getCommands()
+function vconsole.getCommands()
 	return commandRegistry
 end
 
@@ -235,7 +233,7 @@ end
         <strong>Warning: overwrites all existing aliases</strong>, 
         this is mainly meant for importing aliases from a datastore when a player joins
 ]]
-function devconsole.importAliases(aliases: { [string]: string })
+function vconsole.importAliases(aliases: { [string]: string })
 	aliasRegistry = aliases
 end
 
@@ -243,7 +241,7 @@ end
     Register a alias to the alias registry<br>
     the built in <code>alias</code> command adds aliases to the registry
 ]]
-function devconsole.registerAlias(name: string, commandString: string)
+function vconsole.registerAlias(name: string, commandString: string)
 	aliasRegistry[name] = commandString
 end
 
@@ -251,7 +249,7 @@ end
     Get all currently registered aliases<br>
     register aliases with <code>importAliases</code> or <code>registerAlias</code>
 ]]
-function devconsole.getAliases()
+function vconsole.getAliases()
 	return aliasRegistry
 end
 
@@ -260,7 +258,7 @@ end
     @param alias name
     @return if the alias existed
 ]]
-function devconsole.removeAlias(aliasName: string): boolean
+function vconsole.removeAlias(aliasName: string): boolean
 	if aliasRegistry == nil then
 		return false
 	end
@@ -269,16 +267,16 @@ function devconsole.removeAlias(aliasName: string): boolean
 	return true
 end
 
-devconsole.registerCommand(
+vconsole.registerCommand(
 	"alias",
-	devconsole.createCommand(function(aliasName: unknown, aliasString: unknown)
+	vconsole.createCommand(function(aliasName: unknown, aliasString: unknown)
 		if typeof(aliasName) == "string" and typeof(aliasString) == "string" then
 			print("alias registered")
-			devconsole.registerAlias(aliasName, aliasString)
+			vconsole.registerAlias(aliasName, aliasString)
 			return true
 		end
 		return false
 	end)
 )
 
-return devconsole
+return vconsole

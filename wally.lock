@@ -3,6 +3,6 @@
 registry = "test"
 
 [[package]]
-name = "borritomes/devconsole"
+name = "borritomes/vconsole"
 version = "0.1.0"
 dependencies = []
