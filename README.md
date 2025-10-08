@@ -8,7 +8,7 @@
 ## Installation
 
 Wally:
-```vconsole = "borritomes/vconsole@0.1.0"```
+```vconsole = "borritomes/vconsole@0.1.2"``` look at the version in wally.toml in case I forget to update this
 Manual:
 copy and paste `vconsole.luau`
 
@@ -22,6 +22,10 @@ to run commands use `vconsole.runCommand`.
 ### Registering commands
 
 commands can be registered with `vconsole.registerCommands`. The function takes a command in the form of a table table but commands can also be constructed with `vconsole.createCommand`.
+
+### Args
+
+look at the source code for details
 
 ### Aliases
 
