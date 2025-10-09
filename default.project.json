@@ -1,0 +1,6 @@
+{
+    "name": "vconsole",
+    "tree": {
+        "$path": "lib"
+    }
+}

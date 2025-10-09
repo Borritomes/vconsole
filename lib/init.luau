@@ -11,7 +11,7 @@ local commandRegistry: { [string]: command? } = {}
 local aliasRegistry: { [string]: string? } = {}
 
 local vconsole = {}
-vconsole.args = require("./args")
+vconsole.args = require("lib/args")
 
 vconsole._MAX_COMMAND_LENGTH = 1024
 
