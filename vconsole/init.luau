@@ -19,7 +19,7 @@ local function parseCommand(commandString: string): {
 	func: (any) -> boolean?,
 	protection: (() -> boolean)?,
 	args: { string? },
-	argConverter: { (string) -> any }?,
+	argConverter: { (string) -> (boolean, any) }?,
 }?
 	if commandString == "" then
 		return
@@ -160,7 +160,12 @@ function vconsole.runCommand(commandString: string)
 					continue
 				end
 				if result.argConverter[i] ~= nil then
-					table.insert(convertedArgs, result.argConverter[i](arg))
+					local success, convertResult = result.argConverter[i](arg)
+					if success then
+						table.insert(convertedArgs, convertResult)
+					else
+						error("incorrect args")
+					end
 				end
 			end
 		end
