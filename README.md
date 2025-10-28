@@ -8,7 +8,7 @@
 ## Installation
 
 Wally:
-```vconsole = "borritomes/vconsole@0.1.3"``` look at the version in wally.toml in case I forget to update this<br>**0.1.1 and 0.1.2 are broken</br>
+```vconsole = "borritomes/vconsole@0.1.7"``` look at the version in wally.toml in case I forget to update this<br>
 Manual:
 copy and paste `vconsole.luau`
 
