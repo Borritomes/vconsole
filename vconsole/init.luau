@@ -219,10 +219,11 @@ function vconsole.removeCommand(name: string) end
 --[[
     Function to create commands
 ]]
-function vconsole.createCommand(callback: (any) -> boolean, protection: (() -> boolean)?): command
+function vconsole.createCommand(callback: (any) -> boolean, protection: (() -> boolean)?, args: { (string) -> any }?): command
 	return {
 		callback = callback,
 		protection = protection,
+		args = args
 	}
 end
 
