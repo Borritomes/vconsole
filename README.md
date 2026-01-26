@@ -24,11 +24,12 @@ Commands are run with `vconsole.runCommand`.
 Commands are registered with `vconsole.registerCommand`. Commands are created with the `vconsole.createCommand` contructor.<br>
 
 Example:
-```
+```lua
 args = vconsole.args
 
-vconsole.registerCommand("sv_cheats", vconsole.createCommand(function()
-  --set cheats to true
+vconsole.registerCommand("sv_cheats", vconsole.createCommand(
+  function()
+    --set cheats to true
   end,
   function() -- any function that returns a boolean for if the command is allowed to be executed
     if canUseCommand then
