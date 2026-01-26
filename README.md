@@ -1,31 +1,53 @@
 # this project is unlikely to recieve any updates in the future
 
 # Important
-- **I haven't tested very thoroughly so theres probably bugs**
-- There is no command interface, you will have to make one yourself.
+- **I haven't tested this very thoroughly so there will probably be bugs**
+- There is no console interface, you will have to make one yourself.
 - There is also no autocomplete.
 
 ## Installation
 
-Wally:
-```vconsole = "borritomes/vconsole@0.1.7"```
-Manual:
+Wally:<br>
+```vconsole = "borritomes/vconsole@0.1.7"```<br>
+Manual:<br>
 copy and paste
 
 ## How to use
 
 ### Running commands
 
-**commands have a character limit of 1024 characters it can be changed by editing vconsole._MAX_COMMAND_LENGTH**<br>
+**commands have a character limit of 1024 characters. This can be changed by editing vconsole._MAX_COMMAND_LENGTH**<br>
 Commands are run with `vconsole.runCommand`.
 
 ### Registering commands
 
-Commands are registered with `vconsole.registerCommands`. Commands are created with the `vconsole.createCommand` contructer.
+Commands are registered with `vconsole.registerCommand`. Commands are created with the `vconsole.createCommand` contructor.<br>
+
+Example:
+```
+args = vconsole.args
+
+vconsole.registerCommand("sv_cheats", vconsole.createCommand(function()
+  --set cheats to true
+  end,
+  function() -- any function that returns a boolean for if the command is allowed to be executed
+    if canUseCommand then
+      return true
+    else
+      return false
+    end
+  end,
+  {
+    args.boolean
+  } -- can be nil
+)
+```
 
 ### Args
 
-The code is very simple so it should be easy to figure out yourself
+Args is a simple type checker/converter<br>
+will return a result (boolean) and value converted from string<br>
+will fail by returning false if string can not be converted
 
 ### Aliases
 
