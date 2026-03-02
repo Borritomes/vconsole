@@ -8,7 +8,7 @@
 ## Installation
 
 Wally:<br>
-```vconsole = "borritomes/vconsole@0.1.7"```<br>
+```vconsole = "borritomes/vconsole@0.2.1"```<br>
 Manual:<br>
 copy and paste
 
