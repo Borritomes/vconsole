@@ -1,48 +1,54 @@
 --!nolint LocalUnused
 --!nolint FunctionUnused
+--!nolint BuiltinGlobalWrite
 
 export type command = {
 	callback: (any) -> boolean,
-	args: { (string) -> any }?,
+	args: { (string) -> (boolean, any) }?,
 	protection: (() -> boolean)?,
+}
+
+--parse command returns this type
+--it has the data runCommand need to run a command
+type commandData = {
+	callback: (any) -> boolean?,
+	protection: (() -> boolean)?,
+	args: { string? },
+	argConverter: { (string) -> (boolean, any) }?,
 }
 
 local commandRegistry: { [string]: command? } = {}
 local aliasRegistry: { [string]: string? } = {}
 
+--lute doesnt have warn implementation
+local warn = print
+
 local vconsole = {}
-vconsole.args = require("vconsole/args")
+vconsole.args = require("@self/args")
 
 vconsole._MAX_COMMAND_LENGTH = 1024
 
-local function parseCommand(commandString: string): {
-	func: (any) -> boolean?,
-	protection: (() -> boolean)?,
-	args: { string? },
-	argConverter: { (string) -> (boolean, any) }?,
-}?
+local function parseCommand(commandString: string): commandData?
 	if commandString == "" then
-		return
+		return nil
 	end
-	local isInParentheses = false
+	local isInQuotes = false
 
-	local words = {}
+	local words: {string?} = {}
 	local currentWord = ""
-	local chars = ""
 
 	--split into words and make stuff in parentheses its own word
-	for i, char in commandString:split("") do
-		chars ..= char
+	for _, char in commandString:split("") do
 		if char == '"' then
-			isInParentheses = not isInParentheses
+			isInQuotes = not isInQuotes
 			continue
 		end
 
-		if isInParentheses == true then
-			if char == '"' then
-				isInParentheses = false
-				continue
-			end
+		if isInQuotes == true then
+			-- if char == '"' then
+			-- 	isInQuotes = false
+			-- 	continue
+			-- end
 
 			currentWord ..= char
 			continue
@@ -67,7 +73,7 @@ local function parseCommand(commandString: string): {
 	--if there is no command name
 	if commandName == nil then
 		warn("invalid command")
-		return
+		return nil
 	end
 
 	local args = {}
@@ -80,14 +86,14 @@ local function parseCommand(commandString: string): {
 	local command = commandRegistry[commandName]
 	if command ~= nil and command.callback ~= nil then
 		return {
-			func = command.callback,
+			callback = command.callback,
 			protection = command.protection,
 			args = args,
 			argConverter = command.args,
 		}
 	elseif aliasRegistry[commandName] ~= nil then
 		return {
-			func = function()
+			callback = function()
 				local alias = aliasRegistry[commandName]
 				if alias ~= nil then
 					return vconsole.runCommand(alias)
@@ -101,33 +107,50 @@ local function parseCommand(commandString: string): {
 	end
 
 	warn("no command or alias found named " .. commandName)
-	return
+	return nil
 end
 
-local function splitCommand(command: string)
-	local commands = command:split(";")
+local function splitCommand(commandString: string)
+	--commands in a commandString are split by semi-colons
+	--TODO: make sure semi-colons in whitespace do get split by this
+	local commands = commandString:split(";")
 
-	for i, command in commands do
-		--make command easier to work with
-		--converts '   a b   "  c  "  d ' to 'a b "  c  "  d'
+	local nonEmptyCommands: {string} = {}
+
+	for _, command in commands do
+		--text in double-quotes is stored here temporarily so it gets perserved
+		--from the whitespace formatter
 		local quoted = {}
-		command:gsub('"(.-)"', function(q)
-			table.insert(quoted, q)
+
+		--replaces everything in double-quotes with a token "\0"
+		--and the index of the quote in the double-quoted strings table
+		--the '"(.-)"' looks for any characters in double quotes
+		--passes the characters into the function and replaces it with the returned value
+		command:gsub('"(.-)"', function(stringInQuotes: string): string
+			table.insert(quoted, stringInQuotes)
 			return "\0" .. #quoted
 		end)
 
+		--replace white space with a single space
+		--%s mean whitespace and the + means include all whitespace to the right until
+		--it is interupted by a non-whitespace character
 		command:gsub("%s+", " ")
 
+		--puts the text in double-quotes back in the command
+		--this looks for the token "\0" and the number after it (the %d means any digit)
 		command:gsub("\0(%d+)", function(i: string)
-			return '"' .. quoted[tonumber(i) or 1] .. '"'
+			--if the quoted value is nil default to ""
+			return '"' .. (quoted[tonumber(i) or 1] or "") .. '"'
 		end)
 
-		if command:gsub("%s+", "") == "" then
-			table.remove(commands, i)
+		--only insert commands that aren't empty
+		--the command:gsub returns what the command would be if all whitespace was removed
+		if command:gsub("%s+", "") ~= "" then
+			table.insert(nonEmptyCommands, command)
 		end
 	end
 
-	return commands
+	return nonEmptyCommands
 end
 
 --[[
@@ -137,13 +160,15 @@ end
     vconsole.runCommand('alias jumpthrow "+jump; +attack"')</code>
     <br><sup>bind and action commands not included</sup></p>
 ]]
-function vconsole.runCommand(commandString: string)
+function vconsole.runCommand(commandString: string): boolean
 	if commandString:len() > vconsole._MAX_COMMAND_LENGTH then
 		warn(
 			"Command of length " .. commandString:len() .. " is to long. Max length is " .. vconsole._MAX_COMMAND_LENGTH
 		)
 		return false
 	end
+
+	--split the commands by semi-colons and format them
 	local commands = splitCommand(commandString)
 
 	for _, command in commands do
@@ -164,37 +189,18 @@ function vconsole.runCommand(commandString: string)
 					if success then
 						table.insert(convertedArgs, convertResult)
 					else
-						error("incorrect args")
+						warn("incorrect args")
+						return false
 					end
 				end
 			end
 		end
 
-		if result.protection == nil then
-			result.func(table.unpack(convertedArgs))
-		elseif result.protection() == true then
-			result.func(table.unpack(convertedArgs))
+		if result.protection == nil or result.protection() == true then
+			result.callback(table.unpack(convertedArgs))
 		else
 			warn("command is protected")
 		end
-	end
-
-	return true
-end
-
---[[
-    The same as <code>runCommand</code> but without the character limit<br>
-    <sup>character limit can be changed with the <code>vconsole._MAX_COMMAND_LENGTH</code> variable</sup>
-]]
-function vconsole.runCommandUnrestriced(commandString: string): boolean
-	local commands = splitCommand(commandString)
-
-	for _, command in commands do
-		local result = parseCommand(command)
-		if result == nil then
-			return false
-		end
-		result.func(table.unpack(result.args))
 	end
 
 	return true
@@ -214,16 +220,19 @@ end
     @param command name
     @return if the alias existed
 ]]
-function vconsole.removeCommand(name: string) end
+function vconsole.removeCommand(name: string)
+	--this was empty until after 0.2.0, not sure why
+	commandRegistry[name] = nil
+end
 
 --[[
     Function to create commands
 ]]
-function vconsole.createCommand(callback: (any) -> boolean, protection: (() -> boolean)?, args: { (string) -> any }?): command
+function vconsole.createCommand(callback: (any) -> boolean, args: { (string) -> (boolean, any) }?, protection: (() -> boolean)?): command
 	return {
 		callback = callback,
+		args = args,
 		protection = protection,
-		args = args
 	}
 end
 
@@ -240,7 +249,7 @@ end
         <strong>Warning: overwrites all existing aliases</strong>, 
         this is mainly meant for importing aliases from a datastore when a player joins
 ]]
-function vconsole.importAliases(aliases: { [string]: string })
+function vconsole.importAliases(aliases: { [string]: string? })
 	aliasRegistry = aliases
 end
 
@@ -274,6 +283,10 @@ function vconsole.removeAlias(aliasName: string): boolean
 	return true
 end
 
+function vconsole.test()
+	print("ran vconsole.test()")
+end
+
 vconsole.registerCommand(
 	"alias",
 	vconsole.createCommand(function(aliasName: unknown, aliasString: unknown)
@@ -286,4 +299,4 @@ vconsole.registerCommand(
 	end)
 )
 
-return vconsole
+return vconsole :: typeof(vconsole)

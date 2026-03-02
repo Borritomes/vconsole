@@ -1,5 +1,3 @@
-std = "roblox"
+std = "luau"
 
 [config]
-unused_variable = "allow"
-local_shadow = "allow"

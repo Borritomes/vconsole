@@ -31,16 +31,18 @@ vconsole.registerCommand("sv_cheats", vconsole.createCommand(
   function()
     --set cheats to true
   end,
-  function() -- any function that returns a boolean for if the command is allowed to be executed
+  {
+    args.boolean
+  },
+  --protection
+  --an optional callback to check if a the command should be ran
+  function()
     if canUseCommand then
       return true
     else
       return false
     end
   end,
-  {
-    args.boolean
-  } -- can be nil
 )
 ```
 
